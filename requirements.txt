@@ -1,0 +1,16 @@
+# Core: plotting, gain, gain-equalize, spectrograms
+# numpy is pinned <2.0 because deepfilternet (below) requires it; the rest of the
+# toolbox works fine on either 1.x or 2.x.
+numpy>=1.26,<2.0
+scipy>=1.17
+matplotlib>=3.10
+
+# record: microphone capture
+PyAudio>=0.2.14
+
+# denoise: DeepFilterNet3 environmental noise suppression.
+# DeepFilterNet 0.5.x predates the torchaudio API removals; audio_engineer.py shims
+# the one missing symbol and does its own I/O, so current torch/torchaudio work.
+deepfilternet>=0.5
+torch>=2.0
+torchaudio>=2.0
