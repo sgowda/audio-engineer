@@ -9,6 +9,7 @@ Subcommands:
     gain-equalize  Match each file's level to a reference (90th percentile).
     denoise     Suppress environmental noise with DeepFilterNet3.
     record      Record from one or more microphones to an output dir.
+    loopback    Route a live input device straight to an output device.
 """
 import argparse
 import glob
@@ -365,6 +366,18 @@ def list_audio_devices(audio):
             print()
 
 
+def list_output_devices(audio):
+    print("Available audio output devices:")
+    print("-" * 50)
+    for i in range(audio.get_device_count()):
+        info = audio.get_device_info_by_index(i)
+        if info["maxOutputChannels"] > 0:
+            print(f"Device {i}: {info['name']}")
+            print(f"  - Max output channels: {info['maxOutputChannels']}")
+            print(f"  - Default sample rate: {info['defaultSampleRate']}")
+            print()
+
+
 def resolve_mic_names(audio, device_indices, override):
     """Map each device index to a unique, filesystem-safe name."""
     if override:
@@ -520,6 +533,137 @@ def cmd_record(args):
         audio.terminate()
 
 
+# --------------------------------------------------------------------------- loopback
+
+LOOPBACK_CHUNK_SIZE = 256  # small buffer keeps the round-trip latency low
+
+
+def prompt_device(audio, kind):
+    """Ask the user to pick a device index of the given kind ('input'/'output')."""
+    key = "maxInputChannels" if kind == "input" else "maxOutputChannels"
+    valid = [i for i in range(audio.get_device_count())
+             if audio.get_device_info_by_index(i)[key] > 0]
+    if not valid:
+        raise SystemExit(f"No {kind} devices found.")
+
+    if kind == "input":
+        list_audio_devices(audio)
+    else:
+        list_output_devices(audio)
+
+    default = (audio.get_default_input_device_info() if kind == "input"
+               else audio.get_default_output_device_info())["index"]
+    while True:
+        try:
+            raw = input(f"Select {kind} device index [{default}]: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            raise SystemExit("\nAborted.")
+        if not raw:
+            return default
+        try:
+            idx = int(raw)
+        except ValueError:
+            print("  Enter a device index (an integer).")
+            continue
+        if idx not in valid:
+            print(f"  {idx} is not an available {kind} device.")
+            continue
+        return idx
+
+
+def remap_channels(samples, in_channels, out_channels):
+    """Reshape interleaved int16 frames from in_channels to out_channels.
+
+    Mono in / multi out fans the signal out to every speaker; multi in / mono out
+    averages. Otherwise channels are copied positionally, padding with silence or
+    dropping the extras.
+    """
+    if in_channels == out_channels:
+        return samples
+    frames = samples.reshape(-1, in_channels)
+    if in_channels == 1:
+        out = np.repeat(frames, out_channels, axis=1)
+    elif out_channels == 1:
+        out = frames.mean(axis=1, keepdims=True).astype(np.int16)
+    else:
+        out = np.zeros((frames.shape[0], out_channels), dtype=np.int16)
+        n = min(in_channels, out_channels)
+        out[:, :n] = frames[:, :n]
+    return out.reshape(-1)
+
+
+def cmd_loopback(args):
+    try:
+        import pyaudio
+    except ImportError:
+        raise SystemExit("The 'loopback' command requires pyaudio (pip install pyaudio).")
+
+    audio = pyaudio.PyAudio()
+    in_stream = out_stream = None
+    try:
+        in_dev = args.input if args.input is not None else prompt_device(audio, "input")
+        out_dev = args.output if args.output is not None else prompt_device(audio, "output")
+
+        in_info = audio.get_device_info_by_index(in_dev)
+        out_info = audio.get_device_info_by_index(out_dev)
+        if in_info["maxInputChannels"] < 1:
+            raise SystemExit(f"Device {in_dev} has no input channels.")
+        if out_info["maxOutputChannels"] < 1:
+            raise SystemExit(f"Device {out_dev} has no output channels.")
+
+        rate = args.rate or int(in_info["defaultSampleRate"])
+        in_ch = args.in_channels or 1
+        if in_ch > in_info["maxInputChannels"]:
+            raise SystemExit(
+                f"input device {in_dev} supports 1..{int(in_info['maxInputChannels'])} channels")
+        out_ch = args.out_channels or min(max(in_ch, 2), int(out_info["maxOutputChannels"]))
+        if out_ch > out_info["maxOutputChannels"]:
+            raise SystemExit(
+                f"output device {out_dev} supports 1..{int(out_info['maxOutputChannels'])} channels")
+
+        print("-" * 50)
+        print(f"In:   {in_dev} {in_info['name']} ({in_ch}ch)")
+        print(f"Out:  {out_dev} {out_info['name']} ({out_ch}ch)")
+        print(f"Rate: {rate} Hz, chunk {args.chunk} frames "
+              f"({1000.0 * args.chunk / rate:.1f} ms)")
+        print("-" * 50)
+
+        try:
+            in_stream = audio.open(
+                format=pyaudio.paInt16, channels=in_ch, rate=rate, input=True,
+                input_device_index=in_dev, frames_per_buffer=args.chunk)
+            out_stream = audio.open(
+                format=pyaudio.paInt16, channels=out_ch, rate=rate, output=True,
+                output_device_index=out_dev, frames_per_buffer=args.chunk)
+        except Exception as exc:  # noqa: BLE001 - device/format mismatch is common here
+            raise SystemExit(
+                f"Could not open the streams at {rate} Hz: {exc}\n"
+                "Try --rate with a rate both devices support (e.g. 44100 or 48000).")
+
+        gain = 10.0 ** (args.gain / 20.0) if args.gain else None
+        print("Looping back... press Ctrl-C to stop.")
+        try:
+            while True:
+                data = in_stream.read(args.chunk, exception_on_overflow=False)
+                if gain is None and in_ch == out_ch:
+                    out_stream.write(data, exception_on_underflow=False)
+                    continue
+                samples = np.frombuffer(data, dtype=np.int16)
+                if gain is not None:
+                    samples = np.clip(samples.astype(np.float32) * gain,
+                                      -32768, 32767).astype(np.int16)
+                samples = remap_channels(samples, in_ch, out_ch)
+                out_stream.write(samples.tobytes(), exception_on_underflow=False)
+        except KeyboardInterrupt:
+            print("\nStopped.")
+    finally:
+        for stream in (in_stream, out_stream):
+            if stream is not None:
+                stream.stop_stream()
+                stream.close()
+        audio.terminate()
+
+
 def main():
     parser = argparse.ArgumentParser(description="A toolbox for all things audio.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -576,6 +720,24 @@ def main():
     p_rec.add_argument("-p", "--prefix", default="recording",
                        help="filename prefix for saved tracks (<prefix>_<mic>.wav)")
     p_rec.set_defaults(func=cmd_record)
+
+    p_lb = sub.add_parser("loopback",
+                          help="Route a live input device straight to an output device.")
+    p_lb.add_argument("-i", "--input", type=int,
+                      help="input device index (prompts interactively if omitted)")
+    p_lb.add_argument("-o", "--output", type=int,
+                      help="output device index (prompts interactively if omitted)")
+    p_lb.add_argument("--rate", type=int,
+                      help="sample rate (Hz); default: the input device's default rate")
+    p_lb.add_argument("--in-channels", type=int, help="input channel count (default: 1)")
+    p_lb.add_argument("--out-channels", type=int,
+                      help="output channel count (default: stereo if supported)")
+    p_lb.add_argument("--chunk", type=int, default=LOOPBACK_CHUNK_SIZE,
+                      help=f"frames per buffer; lower is lower latency "
+                           f"(default: {LOOPBACK_CHUNK_SIZE})")
+    p_lb.add_argument("-g", "--gain", type=float, default=0.0,
+                      help="dB gain applied to the routed signal")
+    p_lb.set_defaults(func=cmd_loopback)
 
     args = parser.parse_args()
     args.func(args)
