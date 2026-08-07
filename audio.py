@@ -15,6 +15,7 @@ import argparse
 import glob
 import os
 import re
+import sys
 import threading
 import wave
 try:
@@ -664,6 +665,33 @@ def cmd_loopback(args):
         audio.terminate()
 
 
+def prompt_for_command(sub):
+    """Interactively ask which subcommand to run, returning it (plus any typed
+    args) as an argv list. Used when the script is launched with no arguments —
+    e.g. double-clicked on Windows — so it presents a menu and waits for input
+    instead of printing usage and vanishing."""
+    names = list(sub.choices)
+    help_by_name = {a.dest: (a.help or "") for a in getattr(sub, "_choices_actions", [])}
+    print("\naudio.py - pick a command:\n")
+    for name in names:
+        print(f"  {name:14s} {help_by_name.get(name, '')}")
+    print()
+    while True:
+        try:
+            line = input("Command (e.g. 'loopback', or add args like 'plot foo.wav'); 'q' to quit: ").strip()
+        except EOFError:
+            raise SystemExit(0)
+        if line.lower() in ("q", "quit", "exit"):
+            raise SystemExit(0)
+        if not line:
+            continue
+        parts = line.split()
+        if parts[0] not in names:
+            print(f"  '{parts[0]}' isn't a command. Choose one of: {', '.join(names)}\n")
+            continue
+        return parts
+
+
 def main():
     parser = argparse.ArgumentParser(description="A toolbox for all things audio.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -739,8 +767,38 @@ def main():
                       help="dB gain applied to the routed signal")
     p_lb.set_defaults(func=cmd_loopback)
 
-    args = parser.parse_args()
-    args.func(args)
+    argv = sys.argv[1:]
+    if argv:
+        # Normal command-line use — parse and run, behavior unchanged.
+        args = parser.parse_args(argv)
+        args.func(args)
+        return
+
+    # No arguments (e.g. the script was double-clicked on Windows): prompt for a
+    # command instead of printing usage and exiting, then keep the console open
+    # at the end so results and errors stay readable.
+    while True:
+        argv = prompt_for_command(sub)
+        try:
+            args = parser.parse_args(argv)
+        except SystemExit:
+            # Bad arguments for the chosen command — re-prompt rather than exit.
+            continue
+        break
+    try:
+        args.func(args)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit as exc:
+        if exc.code not in (0, None):
+            print(f"\nExited: {exc}")
+    except Exception:
+        import traceback
+        traceback.print_exc()
+    try:
+        input("\nPress Enter to close this window...")
+    except EOFError:
+        pass
 
 
 if __name__ == "__main__":
