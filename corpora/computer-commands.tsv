@@ -1,0 +1,321 @@
+app	action	shortcut	phrase
+macOS	copy	Cmd+C	Copy that.
+macOS	copy	Cmd+C	Copy the selected text.
+macOS	copy	Cmd+C	Put this on the clipboard.
+macOS	cut	Cmd+X	Cut that.
+macOS	cut	Cmd+X	Cut the selection so I can move it.
+macOS	paste	Cmd+V	Paste it here.
+macOS	paste	Cmd+V	Paste what I just copied.
+macOS	paste and match style	Opt+Shift+Cmd+V	Paste without the formatting.
+macOS	paste and match style	Opt+Shift+Cmd+V	Paste and match the surrounding style.
+macOS	undo	Cmd+Z	Undo that.
+macOS	undo	Cmd+Z	Take back the last change.
+macOS	undo	Cmd+Z	Oops, undo.
+macOS	redo	Shift+Cmd+Z	Redo that.
+macOS	redo	Shift+Cmd+Z	Bring back what I just undid.
+macOS	select all	Cmd+A	Select everything.
+macOS	select all	Cmd+A	Highlight all of it.
+macOS	save	Cmd+S	Save this.
+macOS	save	Cmd+S	Save my work.
+macOS	save as	Shift+Cmd+S	Save this as a new file.
+macOS	save as	Shift+Cmd+S	Save a copy under a different name.
+macOS	print	Cmd+P	Print this.
+macOS	print	Cmd+P	Send this to the printer.
+macOS	find	Cmd+F	Find something on this page.
+macOS	find	Cmd+F	Search inside this document.
+macOS	find next	Cmd+G	Go to the next match.
+macOS	find next	Cmd+G	Find the next one.
+macOS	find previous	Shift+Cmd+G	Go back to the previous match.
+macOS	new document	Cmd+N	Make a new one.
+macOS	new document	Cmd+N	Start a new document.
+macOS	open file	Cmd+O	Open a file.
+macOS	open file	Cmd+O	Show me the open dialog.
+macOS	close window	Cmd+W	Close this window.
+macOS	close window	Cmd+W	Get rid of this window.
+macOS	quit app	Cmd+Q	Quit this app.
+macOS	quit app	Cmd+Q	Close the whole application.
+macOS	hide app	Cmd+H	Hide this app.
+macOS	hide others	Opt+Cmd+H	Hide everything else.
+macOS	hide others	Opt+Cmd+H	Hide all the other apps.
+macOS	minimize	Cmd+M	Minimize this window.
+macOS	minimize	Cmd+M	Send this window to the dock.
+macOS	switch app	Cmd+Tab	Switch to the last app.
+macOS	switch app	Cmd+Tab	Flip back to the other application.
+macOS	switch window	Cmd+`	Switch to the app's other window.
+macOS	switch window	Cmd+`	Cycle through this app's windows.
+macOS	spotlight	Cmd+Space	Open Spotlight.
+macOS	spotlight	Cmd+Space	Search my computer.
+macOS	force quit	Opt+Cmd+Esc	Force quit an app.
+macOS	force quit	Opt+Cmd+Esc	Something is frozen, bring up force quit.
+macOS	screenshot full screen	Shift+Cmd+3	Take a screenshot.
+macOS	screenshot full screen	Shift+Cmd+3	Capture the whole screen.
+macOS	screenshot selection	Shift+Cmd+4	Screenshot just part of the screen.
+macOS	screenshot selection	Shift+Cmd+4	Let me drag to capture an area.
+macOS	screenshot toolbar	Shift+Cmd+5	Open the screenshot tools.
+macOS	screenshot toolbar	Shift+Cmd+5	Start a screen recording.
+macOS	lock screen	Ctrl+Cmd+Q	Lock the screen.
+macOS	lock screen	Ctrl+Cmd+Q	Lock my computer.
+macOS	emoji picker	Ctrl+Cmd+Space	Open the emoji picker.
+macOS	emoji picker	Ctrl+Cmd+Space	Insert an emoji.
+macOS	full screen	Ctrl+Cmd+F	Make this full screen.
+macOS	full screen	Ctrl+Cmd+F	Exit full screen.
+macOS	mission control	Ctrl+Up	Show all my windows.
+macOS	mission control	Ctrl+Up	Open Mission Control.
+macOS	app windows	Ctrl+Down	Show every window for this app.
+macOS	settings	Cmd+,	Open the settings.
+macOS	settings	Cmd+,	Show preferences for this app.
+macOS	delete previous word	Opt+Delete	Delete the last word.
+macOS	delete previous word	Opt+Delete	Erase that word.
+macOS	delete to line start	Cmd+Delete	Delete everything before the cursor on this line.
+text editing	line start	Cmd+Left	Go to the start of the line.
+text editing	line start	Cmd+Left	Jump to the beginning of this line.
+text editing	line end	Cmd+Right	Go to the end of the line.
+text editing	line end	Cmd+Right	Jump to the end of this line.
+text editing	document start	Cmd+Up	Go to the top of the document.
+text editing	document start	Cmd+Up	Scroll all the way up.
+text editing	document end	Cmd+Down	Go to the bottom of the document.
+text editing	document end	Cmd+Down	Jump to the very end.
+text editing	word left	Opt+Left	Move back one word.
+text editing	word right	Opt+Right	Move forward one word.
+text editing	select to line start	Shift+Cmd+Left	Select to the start of the line.
+text editing	select to line end	Shift+Cmd+Right	Select to the end of the line.
+text editing	select next word	Opt+Shift+Right	Select the next word.
+text editing	bold	Cmd+B	Make this bold.
+text editing	bold	Cmd+B	Bold the selected text.
+text editing	italic	Cmd+I	Make this italic.
+text editing	italic	Cmd+I	Italicize that.
+text editing	underline	Cmd+U	Underline this.
+text editing	insert link	Cmd+K	Add a link here.
+text editing	insert link	Cmd+K	Turn this into a link.
+Finder	new window	Cmd+N	Open a new Finder window.
+Finder	new folder	Shift+Cmd+N	Make a new folder.
+Finder	new folder	Shift+Cmd+N	Create a folder here.
+Finder	get info	Cmd+I	Get info on this file.
+Finder	get info	Cmd+I	How big is this file?
+Finder	move to trash	Cmd+Delete	Move this to the trash.
+Finder	move to trash	Cmd+Delete	Delete this file.
+Finder	empty trash	Shift+Cmd+Delete	Empty the trash.
+Finder	duplicate	Cmd+D	Duplicate this file.
+Finder	duplicate	Cmd+D	Make a copy of it.
+Finder	quick look	Space	Preview this file.
+Finder	quick look	Space	Give me a quick look.
+Finder	go to folder	Shift+Cmd+G	Go to a folder by path.
+Finder	go to folder	Shift+Cmd+G	Let me type a folder path.
+Finder	downloads	Opt+Cmd+L	Open my downloads.
+Finder	downloads	Opt+Cmd+L	Show me the downloads folder.
+Finder	applications	Shift+Cmd+A	Open the applications folder.
+Finder	desktop	Shift+Cmd+D	Go to the desktop folder.
+Finder	home folder	Shift+Cmd+H	Go to my home folder.
+Finder	show hidden files	Shift+Cmd+.	Show hidden files.
+Finder	show hidden files	Shift+Cmd+.	Hide the hidden files again.
+Finder	rename	Return	Rename this file.
+Finder	enclosing folder	Cmd+Up	Go up one folder.
+Finder	enclosing folder	Cmd+Up	Take me to the parent folder.
+Finder	open selection	Cmd+Down	Open the selected item.
+Finder	connect to server	Cmd+K	Connect to a server.
+Finder	airdrop	Shift+Cmd+R	Open AirDrop.
+Finder	path bar	Opt+Cmd+P	Show the path bar.
+Finder	icon view	Cmd+1	Show files as icons.
+Finder	list view	Cmd+2	Switch to list view.
+Finder	column view	Cmd+3	Switch to column view.
+browser	new tab	Cmd+T	Open a new tab.
+browser	new tab	Cmd+T	Give me a fresh tab.
+browser	close tab	Cmd+W	Close this tab.
+browser	close tab	Cmd+W	I'm done with this tab.
+browser	reopen closed tab	Shift+Cmd+T	Reopen the tab I just closed.
+browser	reopen closed tab	Shift+Cmd+T	Bring that tab back.
+browser	next tab	Ctrl+Tab	Go to the next tab.
+browser	next tab	Ctrl+Tab	Switch one tab to the right.
+browser	previous tab	Ctrl+Shift+Tab	Go to the previous tab.
+browser	previous tab	Ctrl+Shift+Tab	Switch one tab to the left.
+browser	first tab	Cmd+1	Jump to the first tab.
+browser	last tab	Cmd+9	Jump to the last tab.
+browser	new window	Cmd+N	Open a new browser window.
+browser	private window	Shift+Cmd+N	Open a private window.
+browser	private window	Shift+Cmd+N	Open an incognito window.
+browser	reload	Cmd+R	Reload the page.
+browser	reload	Cmd+R	Refresh this.
+browser	hard reload	Shift+Cmd+R	Reload without the cache.
+browser	back	Cmd+[	Go back.
+browser	back	Cmd+[	Go back a page.
+browser	forward	Cmd+]	Go forward a page.
+browser	address bar	Cmd+L	Go to the address bar.
+browser	address bar	Cmd+L	Let me type a web address.
+browser	bookmark	Cmd+D	Bookmark this page.
+browser	bookmark	Cmd+D	Save this page to my bookmarks.
+browser	bookmarks bar	Shift+Cmd+B	Show the bookmarks bar.
+browser	history	Cmd+Y	Show my browsing history.
+browser	downloads	Opt+Cmd+L	Show my downloads.
+browser	developer tools	Opt+Cmd+I	Open the developer tools.
+browser	developer tools	Opt+Cmd+I	Inspect this page.
+browser	zoom in	Cmd+=	Zoom in.
+browser	zoom in	Cmd+=	Make the text bigger.
+browser	zoom out	Cmd+-	Zoom out.
+browser	zoom out	Cmd+-	Make everything smaller.
+browser	reset zoom	Cmd+0	Reset the zoom.
+browser	reset zoom	Cmd+0	Back to normal size.
+browser	find in page	Cmd+F	Find a word on this page.
+VS Code	command palette	Shift+Cmd+P	Open the command palette.
+VS Code	command palette	Shift+Cmd+P	Show me all commands.
+VS Code	quick open	Cmd+P	Open a file by name.
+VS Code	quick open	Cmd+P	Jump to a file.
+VS Code	toggle sidebar	Cmd+B	Hide the sidebar.
+VS Code	toggle sidebar	Cmd+B	Show the file explorer.
+VS Code	toggle terminal	Ctrl+`	Open the terminal panel.
+VS Code	toggle terminal	Ctrl+`	Hide the terminal.
+VS Code	find in files	Shift+Cmd+F	Search across the whole project.
+VS Code	find in files	Shift+Cmd+F	Find this in every file.
+VS Code	go to line	Ctrl+G	Go to line number.
+VS Code	go to line	Ctrl+G	Jump to a specific line.
+VS Code	go to definition	F12	Go to the definition.
+VS Code	go to definition	F12	Where is this defined?
+VS Code	rename symbol	F2	Rename this variable everywhere.
+VS Code	rename symbol	F2	Rename this symbol.
+VS Code	toggle comment	Cmd+/	Comment out this line.
+VS Code	toggle comment	Cmd+/	Uncomment these lines.
+VS Code	format document	Shift+Opt+F	Format the whole file.
+VS Code	format document	Shift+Opt+F	Clean up the indentation.
+VS Code	add next occurrence	Cmd+D	Select the next occurrence too.
+VS Code	add next occurrence	Cmd+D	Add a cursor at the next match.
+VS Code	move line up	Opt+Up	Move this line up.
+VS Code	move line down	Opt+Down	Move this line down.
+VS Code	copy line down	Shift+Opt+Down	Duplicate this line.
+VS Code	delete line	Shift+Cmd+K	Delete this line.
+VS Code	delete line	Shift+Cmd+K	Remove the whole line.
+VS Code	split editor	Cmd+\	Split the editor.
+VS Code	split editor	Cmd+\	Open this side by side.
+VS Code	close editor	Cmd+W	Close this file.
+VS Code	word wrap	Opt+Z	Turn on word wrap.
+VS Code	word wrap	Opt+Z	Stop wrapping long lines.
+VS Code	navigate back	Ctrl+-	Go back to where I was.
+VS Code	problems panel	Shift+Cmd+M	Show me the errors.
+VS Code	problems panel	Shift+Cmd+M	Open the problems panel.
+VS Code	start debugging	F5	Start debugging.
+VS Code	start debugging	F5	Run this under the debugger.
+VS Code	toggle breakpoint	F9	Set a breakpoint here.
+VS Code	toggle breakpoint	F9	Remove this breakpoint.
+VS Code	save all	Opt+Cmd+S	Save all open files.
+Terminal	new tab	Cmd+T	Open a new terminal tab.
+Terminal	clear screen	Cmd+K	Clear the terminal.
+Terminal	clear screen	Cmd+K	Wipe the screen.
+Terminal	interrupt	Ctrl+C	Stop that command.
+Terminal	interrupt	Ctrl+C	Kill the running process.
+Terminal	end of input	Ctrl+D	Send end of file.
+Terminal	end of input	Ctrl+D	Exit this shell.
+Terminal	clear line	Ctrl+U	Clear what I've typed.
+Terminal	clear line	Ctrl+U	Erase this command line.
+Terminal	line start	Ctrl+A	Go to the start of the command.
+Terminal	line end	Ctrl+E	Go to the end of the command.
+Terminal	search history	Ctrl+R	Search my command history.
+Terminal	search history	Ctrl+R	Find a command I ran before.
+Terminal	previous command	Up	Bring up the last command.
+Terminal	previous command	Up	Run that again.
+Terminal	autocomplete	Tab	Complete the file name.
+Terminal	suspend	Ctrl+Z	Suspend this job.
+Terminal	delete word	Ctrl+W	Delete the last word I typed.
+Slack	jump to conversation	Cmd+K	Jump to a conversation.
+Slack	jump to conversation	Cmd+K	Open my messages with the team.
+Slack	search	Cmd+G	Search Slack.
+Slack	search	Cmd+G	Find that message from yesterday.
+Slack	mark all read	Shift+Esc	Mark everything as read.
+Slack	mark all read	Shift+Esc	Clear all my unread messages.
+Slack	previous unread	Opt+Shift+Up	Go to the previous unread channel.
+Slack	next unread	Opt+Shift+Down	Go to the next unread channel.
+Slack	edit last message	Up	Edit my last message.
+Slack	edit last message	Up	Fix the typo in what I just sent.
+Slack	new message	Cmd+N	Write a new message.
+Slack	threads	Shift+Cmd+T	Show my threads.
+Slack	mentions	Shift+Cmd+M	Show my mentions.
+Slack	upload file	Cmd+U	Upload a file.
+Slack	upload file	Cmd+U	Attach a file to this message.
+Slack	set status	Shift+Cmd+Y	Set my status.
+Slack	set status	Shift+Cmd+Y	Tell everyone I'm away.
+Slack	huddle	Shift+Cmd+H	Start a huddle.
+Slack	huddle	Shift+Cmd+H	Join the huddle in this channel.
+Slack	huddle mute	Shift+Cmd+Space	Mute myself in the huddle.
+Zoom	mute	Shift+Cmd+A	Mute me.
+Zoom	mute	Shift+Cmd+A	Unmute my microphone.
+Zoom	mute	Shift+Cmd+A	Toggle my mic.
+Zoom	video	Shift+Cmd+V	Turn my camera off.
+Zoom	video	Shift+Cmd+V	Start my video.
+Zoom	share screen	Shift+Cmd+S	Share my screen.
+Zoom	share screen	Shift+Cmd+S	Stop sharing.
+Zoom	raise hand	Opt+Y	Raise my hand.
+Zoom	raise hand	Opt+Y	Lower my hand.
+Zoom	participants	Cmd+U	Show the participants.
+Zoom	chat	Shift+Cmd+H	Open the meeting chat.
+Zoom	gallery view	Shift+Cmd+W	Switch to gallery view.
+Zoom	record	Shift+Cmd+R	Start recording this meeting.
+Zoom	leave meeting	Cmd+W	Leave the meeting.
+Zoom	leave meeting	Cmd+W	Hang up.
+Google Meet	mute	Cmd+D	Mute me in Meet.
+Google Meet	mute	Cmd+D	Turn my mic back on.
+Google Meet	camera	Cmd+E	Turn off my camera in Meet.
+Google Meet	camera	Cmd+E	Turn my camera back on.
+Gmail	compose	C	Write a new email.
+Gmail	compose	C	Compose a message.
+Gmail	reply	R	Reply to this email.
+Gmail	reply	R	Answer this message.
+Gmail	reply all	A	Reply to everyone.
+Gmail	reply all	A	Reply all.
+Gmail	forward	F	Forward this email.
+Gmail	forward	F	Send this to someone else.
+Gmail	archive	E	Archive this.
+Gmail	archive	E	Get this out of my inbox.
+Gmail	delete	#	Delete this email.
+Gmail	delete	#	Trash this message.
+Gmail	mark read	Shift+I	Mark this as read.
+Gmail	mark unread	Shift+U	Mark this as unread.
+Gmail	mark unread	Shift+U	Keep this one unread for later.
+Gmail	send	Cmd+Return	Send it.
+Gmail	send	Cmd+Return	Send this email now.
+Gmail	search mail	/	Search my email.
+Gmail	go to inbox	G then I	Go to my inbox.
+Gmail	select conversation	X	Select this conversation.
+Gmail	star	S	Star this email.
+Gmail	star	S	Flag this as important.
+Gmail	next conversation	J	Go to the next email.
+Gmail	previous conversation	K	Go to the previous email.
+Google Docs	word count	Shift+Cmd+C	How many words is this?
+Google Docs	word count	Shift+Cmd+C	Show the word count.
+Google Docs	heading 1	Opt+Cmd+1	Make this a heading.
+Google Docs	heading 2	Opt+Cmd+2	Make this a subheading.
+Google Docs	normal text	Opt+Cmd+0	Turn this back into normal text.
+Google Docs	bulleted list	Shift+Cmd+8	Make this a bulleted list.
+Google Docs	numbered list	Shift+Cmd+7	Make this a numbered list.
+Google Docs	comment	Opt+Cmd+M	Add a comment.
+Google Docs	comment	Opt+Cmd+M	Leave a note on this sentence.
+Google Docs	strikethrough	Shift+Cmd+X	Strike through this text.
+Google Docs	clear formatting	Cmd+\	Clear the formatting.
+Google Docs	clear formatting	Cmd+\	Remove all the styling from this.
+Google Docs	center align	Shift+Cmd+E	Center this line.
+Google Docs	page break	Cmd+Return	Insert a page break.
+Google Docs	larger font	Shift+Cmd+.	Make the font bigger.
+Google Docs	smaller font	Shift+Cmd+,	Make the font smaller.
+Google Sheets	select column	Ctrl+Space	Select this column.
+Google Sheets	select row	Shift+Space	Select this row.
+Google Sheets	fill down	Cmd+D	Fill this down.
+Google Sheets	fill down	Cmd+D	Copy the formula down the column.
+Google Sheets	fill right	Cmd+R	Fill this to the right.
+Google Sheets	insert date	Cmd+;	Put today's date in this cell.
+Google Sheets	insert time	Shift+Cmd+;	Put the current time here.
+Google Sheets	last cell	Cmd+Down	Jump to the bottom of the column.
+Google Sheets	currency format	Ctrl+Shift+4	Format this as currency.
+Google Sheets	percent format	Ctrl+Shift+5	Format this as a percentage.
+Spotify	play pause	Space	Pause the music.
+Spotify	play pause	Space	Play the song again.
+Spotify	next track	Cmd+Right	Skip this song.
+Spotify	next track	Cmd+Right	Next track.
+Spotify	previous track	Cmd+Left	Go back to the last song.
+Spotify	previous track	Cmd+Left	Previous track.
+Spotify	volume up	Cmd+Up	Turn the music up.
+Spotify	volume down	Cmd+Down	Turn the music down.
+Spotify	shuffle	Cmd+S	Shuffle the playlist.
+Spotify	repeat	Cmd+R	Put this on repeat.
+Spotify	search	Cmd+L	Search for a song.
+Preview	rotate left	Cmd+L	Rotate this left.
+Preview	rotate right	Cmd+R	Rotate this to the right.
+Preview	markup toolbar	Shift+Cmd+A	Show the markup tools.
+Preview	markup toolbar	Shift+Cmd+A	Let me sign this document.
+Preview	zoom to fit	Cmd+9	Fit it to the window.
+Preview	actual size	Cmd+0	Show it at actual size.

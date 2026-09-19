@@ -9,6 +9,7 @@ Subcommands:
     gain-equalize  Match each file's level to a reference (90th percentile).
     denoise     Suppress environmental noise with DeepFilterNet3.
     record      Record from one or more microphones to an output dir.
+    record-corpus  Prompt for sentences and record each from one or more mics.
     loopback    Route a live input device straight to an output device.
 """
 import argparse
@@ -17,6 +18,7 @@ import os
 import re
 import sys
 import threading
+import time
 import wave
 try:
     import matplotlib.pyplot as plt
@@ -534,6 +536,271 @@ def cmd_record(args):
         audio.terminate()
 
 
+# --------------------------------------------------------------------------- record-corpus
+
+CORPUS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "corpora")
+# Pinned so a corpus's sentence order (and so every recorded index) never changes.
+_COMMON_VOICE = ("https://raw.githubusercontent.com/common-voice/common-voice/"
+                 "a15d5c520200d0369cd9f5adf17fcbb4e54847b7/server/data/en/")
+CORPUS_SHUFFLE_SEED = 0
+
+# Cued-sentence corpora for --corpus. Downloaded ones are cached under
+# ~/.cache/audio-engineer/corpora. "shuffle" applies a fixed seeded permutation
+# so the first N prompts of an alphabetized or grouped list are a varied sample.
+CORPORA = {
+    "arctic": {
+        "url": "http://www.festvox.org/cmu_arctic/cmuarctic.data", "format": "festvox",
+        "about": "CMU ARCTIC: 1132 phonetically balanced sentences from out-of-copyright "
+                 "books (a set, then b set); free licence, attribution"},
+    "harvard": {
+        "url": _COMMON_VOICE + "harvsents.txt", "format": "lines",
+        "about": "Harvard sentences (IEEE 1969): 720 phonetically balanced sentences in "
+                 "72 lists of 10; public domain"},
+    "mocha-timit": {
+        "url": "https://data.cstr.ed.ac.uk/mocha/mocha-timit.txt", "format": "numbered",
+        "about": "MOCHA-TIMIT (CSTR Edinburgh): 460 TIMIT-derived sentences covering the "
+                 "phonemes of English; free for non-commercial use"},
+    "commonvoice": {
+        "url": _COMMON_VOICE + "sentence-collector.txt", "format": "lines", "shuffle": True,
+        "about": "Mozilla Common Voice English sentence collector: 61.5k short CC0 "
+                 "sentences (pinned commit, fixed shuffle)"},
+    "computer-commands": {
+        "path": os.path.join(CORPUS_DIR, "computer-commands.tsv"), "format": "tsv",
+        "shuffle": True,
+        "about": "bundled: 320 spoken requests for common macOS and app keyboard shortcuts; "
+                 "the manifest records each one's app, action and shortcut"},
+}
+
+# Festvox prompt line: ( arctic_a0001 "Author of the danger trail, ..." )
+FESTVOX_PROMPT_RE = re.compile(r'^\(\s*\S+\s+"(.*)"\s*\)$')
+# MOCHA-TIMIT line: "017. Sentence text" (a wrapped sentence repeats its number)
+NUMBERED_PROMPT_RE = re.compile(r"^(\d+)\.\s+(.*\S)\s*$")
+
+
+def parse_prompts(text, fmt):
+    """Parse a corpus file into a list of (prompt, labels) pairs."""
+    lines = [ln.strip() for ln in text.splitlines()]
+    if fmt == "tsv":
+        import csv
+        rows = list(csv.DictReader(lines, delimiter="\t"))
+        if not rows or "phrase" not in rows[0]:
+            raise SystemExit("a .tsv prompt file needs a header with a 'phrase' column")
+        return [(r["phrase"], {k: v for k, v in r.items() if k != "phrase"}) for r in rows]
+    if fmt == "numbered":
+        joined = {}
+        for ln in lines:
+            m = NUMBERED_PROMPT_RE.match(ln)
+            if m:
+                key = int(m.group(1))
+                joined[key] = f"{joined[key]} {m.group(2)}" if key in joined else m.group(2)
+        return [(joined[k], {}) for k in sorted(joined)]
+    prompts = []
+    for ln in lines:
+        if not ln or ln.startswith("#"):
+            continue
+        m = FESTVOX_PROMPT_RE.match(ln)  # also accept festvox lines in plain files
+        prompts.append((m.group(1) if m else ln, {}))
+    return prompts
+
+
+def fetch_corpus_text(url):
+    """Download a corpus file once, caching it locally."""
+    import urllib.request
+    cache = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+                         "audio-engineer", "corpora")
+    path = os.path.join(cache, re.sub(r"[^A-Za-z0-9._-]+", "_", url.split("://", 1)[-1]))
+    if not os.path.exists(path):
+        print(f"Downloading {url} ...")
+        try:
+            with urllib.request.urlopen(url, timeout=60) as r:
+                data = r.read()
+        except OSError as exc:
+            raise SystemExit(f"Could not download {url}: {exc}\n"
+                             "Download it yourself and pass it with --prompts FILE.")
+        os.makedirs(cache, exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(data)
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+def load_corpus(name, prompts_file=None):
+    """Return (corpus name, [(prompt, labels), ...]) for --corpus or --prompts."""
+    if prompts_file:
+        stem = os.path.splitext(os.path.basename(prompts_file))[0]
+        with open(prompts_file, encoding="utf-8") as f:
+            text = f.read()
+        items = parse_prompts(text, "tsv" if prompts_file.endswith(".tsv") else "lines")
+        name = slugify(stem)
+    else:
+        spec = CORPORA[name]
+        if "path" in spec:
+            with open(spec["path"], encoding="utf-8") as f:
+                text = f.read()
+        else:
+            text = fetch_corpus_text(spec["url"])
+        items = parse_prompts(text, spec["format"])
+        if spec.get("shuffle"):
+            import random
+            random.Random(CORPUS_SHUFFLE_SEED).shuffle(items)
+    if not items:
+        raise SystemExit(f"No prompts found for corpus '{name}'")
+    return name, items
+
+
+def write_or_check_manifest(path, items, width):
+    """Write <corpus>_prompts.tsv (index -> prompt + labels), or confirm an existing
+    one still matches, so indices recorded earlier keep meaning the same sentence."""
+    label_keys = list(items[0][1])
+    rows = [[f"{i:0{width}d}", text] + [labels.get(k, "") for k in label_keys]
+            for i, (text, labels) in enumerate(items, start=1)]
+    lines = ["\t".join(["index", "prompt"] + label_keys)] + ["\t".join(r) for r in rows]
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            if f.read().splitlines() != lines:
+                raise SystemExit(f"{path} does not match the current corpus, so its indices "
+                                 "would no longer line up. Record into a new --out directory.")
+        return
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def recorded_indices(out_dir, corpus):
+    pattern = re.compile(rf"^{re.escape(corpus)}_(\d+)_.+\.wav$")
+    found = set()
+    if os.path.isdir(out_dir):
+        for name in os.listdir(out_dir):
+            m = pattern.match(name)
+            if m:
+                found.add(int(m.group(1)))
+    return found
+
+
+def play_sync_pulse(audio, pyaudio, device, freq, duration, level_db):
+    """Play a sine tone on the output device and return once it has drained."""
+    info = (audio.get_device_info_by_index(device) if device is not None
+            else audio.get_default_output_device_info())
+    rate = int(info["defaultSampleRate"])
+    out_ch = min(2, int(info["maxOutputChannels"]))
+    t = np.arange(int(round(duration * rate))) / rate
+    amplitude = 32767 * 10.0 ** (level_db / 20.0)
+    tone = (amplitude * np.sin(2 * np.pi * freq * t)).astype(np.int16)
+    stream = audio.open(format=pyaudio.paInt16, channels=out_ch, rate=rate,
+                        output=True, output_device_index=info["index"])
+    try:
+        stream.write(remap_channels(tone, 1, out_ch).tobytes())
+    finally:
+        stream.stop_stream()  # blocks until the buffered tone has played out
+        stream.close()
+
+
+def cmd_record_corpus(args):
+    if args.list_corpora:
+        for name, spec in CORPORA.items():
+            print(f"  {name:18s} {spec['about']}")
+        return
+    try:
+        import pyaudio
+    except ImportError:
+        raise SystemExit("The 'record-corpus' command requires pyaudio (pip install pyaudio).")
+
+    audio = pyaudio.PyAudio()
+    try:
+        if args.list:
+            list_audio_devices(audio)
+            list_output_devices(audio)
+            return
+        if not args.devices:
+            raise SystemExit("provide at least one device index, or use --list")
+        if not args.out:
+            raise SystemExit("provide an output directory with -o/--out")
+
+        corpus, items = load_corpus(args.corpus, args.prompts)
+        total = len(items)
+        width = max(4, len(str(total)))
+        end = min(args.num_prompts or total, total)
+        done = recorded_indices(args.out, corpus)
+        start = args.start or (max(done) + 1 if done else 1)
+        if not 1 <= start <= total:
+            raise SystemExit(f"--start must be between 1 and {total}")
+        mic_names = resolve_mic_names(audio, args.devices, args.names)
+        mic_channels = resolve_mic_channels(audio, args.devices, args.channels)
+
+        os.makedirs(args.out, exist_ok=True)
+        # Index -> text lookup (plus any labels), since filenames carry only the index.
+        write_or_check_manifest(os.path.join(args.out, f"{corpus}_prompts.tsv"), items, width)
+        if start > end:
+            print(f"Nothing to record: {corpus} is already recorded through "
+                  f"{max(done):0{width}d} in {args.out} (target {end} of {total}).")
+            return
+
+        print(f"Output:  {args.out}")
+        print(f"Corpus:  {corpus} ({total} prompts)"
+              + (f" - {CORPORA[corpus]['about']}" if corpus in CORPORA else ""))
+        print(f"Prompts: {start:0{width}d}..{end:0{width}d} ({end - start + 1} to record"
+              + (f"; resuming after {max(done):0{width}d})" if done and not args.start else ")"))
+        print("Mics:    " + ", ".join(
+            f"{idx}->{name}({nch}ch)"
+            for idx, name, nch in zip(args.devices, mic_names, mic_channels)))
+        print(f"Rate:    {args.rate} Hz")
+        if args.sync_pulse:
+            print(f"Pulse:   {args.pulse_freq:g} Hz for {args.pulse_duration:g}s, "
+                  f"{args.pulse_delay:g}s after recording starts")
+        print("-" * 50)
+        print("After each prompt: Enter = save & next, 'r' + Enter = redo, "
+              "'q' + Enter = discard & quit.")
+
+        index = start
+        while index <= end:
+            recorders = [
+                MicRecorder(audio, pyaudio.paInt16, dev, name, args.rate, nch)
+                for dev, name, nch in zip(args.devices, mic_names, mic_channels)
+            ]
+            for rec in recorders:
+                rec.open()
+            for rec in recorders:
+                rec.start()
+
+            print(f"\n[{corpus} {index:0{width}d}, {index - start + 1}/{end - start + 1}] "
+                  "recording...", flush=True)
+            try:
+                if args.sync_pulse:
+                    time.sleep(args.pulse_delay)
+                    play_sync_pulse(audio, pyaudio, args.pulse_device, args.pulse_freq,
+                                    args.pulse_duration, args.pulse_level)
+                print(f"\n    {items[index - 1][0]}\n")
+                action = input("  > ").strip().lower()
+            except (KeyboardInterrupt, EOFError):
+                print()
+                action = "q"
+            finally:
+                for rec in recorders:
+                    rec.stop()
+                for rec in recorders:
+                    rec.join()
+
+            for name, err in [(r.name, r.error) for r in recorders if r.error]:
+                print(f"  ! {name}: {err}")
+
+            if action == "q":
+                print(f"Discarded {index:0{width}d}; stopped. Run the same command again "
+                      f"to resume from {index:0{width}d}.")
+                break
+            if action == "r":
+                print("  redoing...")
+                continue
+
+            saved = []
+            for rec in recorders:
+                saved.extend(rec.save_channels(args.out, f"{corpus}_{index:0{width}d}"))
+            print("  saved " + ", ".join(saved))
+            index += 1
+        else:
+            print(f"\nRecorded {corpus} {start:0{width}d}..{end:0{width}d} to {args.out}.")
+    finally:
+        audio.terminate()
+
+
 # --------------------------------------------------------------------------- loopback
 
 LOOPBACK_CHUNK_SIZE = 256  # small buffer keeps the round-trip latency low
@@ -748,6 +1015,44 @@ def main():
     p_rec.add_argument("-p", "--prefix", default="recording",
                        help="filename prefix for saved tracks (<prefix>_<mic>.wav)")
     p_rec.set_defaults(func=cmd_record)
+
+    p_rc = sub.add_parser("record-corpus",
+                          help="Prompt for sentences and record each from one or more mics.")
+    p_rc.add_argument("devices", nargs="*", type=int,
+                      help="input device indices to record from (see --list)")
+    p_rc.add_argument("--list", action="store_true", help="list input/output devices and exit")
+    p_rc.add_argument("--names", help="comma-separated mic names (one per device)")
+    p_rc.add_argument("--channels",
+                      help="comma-separated channel count per device, e.g. 1,2,1 "
+                           "(default: mono each). Each channel is saved separately.")
+    p_rc.add_argument("--rate", type=int, default=DEFAULT_RECORD_RATE, help="sample rate (Hz)")
+    p_rc.add_argument("-o", "--out",
+                      help="output directory (created if missing; required when recording)")
+    p_rc.add_argument("--corpus", default="arctic", choices=list(CORPORA),
+                      help="cued-sentence corpus (default: arctic); see --list-corpora. "
+                           "Files are named <corpus>_<index>_<mic>.wav")
+    p_rc.add_argument("--list-corpora", action="store_true",
+                      help="describe the available corpora and exit")
+    p_rc.add_argument("--prompts",
+                      help="custom prompt file instead of --corpus: one sentence per line "
+                           "(festvox lines accepted), or a .tsv with a 'phrase' column; "
+                           "the corpus name is the file's stem")
+    p_rc.add_argument("-n", "--num-prompts", type=int,
+                      help="record through this corpus index (1-based), or to the end of the "
+                           "corpus if it is shorter (default: the whole corpus)")
+    p_rc.add_argument("--start", type=int,
+                      help="1-based corpus index to start at (default: resume after the "
+                           "highest index already recorded for this corpus in --out, else 1)")
+    p_rc.add_argument("--sync-pulse", action="store_true",
+                      help="play a tone after recording starts, before showing each prompt")
+    p_rc.add_argument("--pulse-device", type=int,
+                      help="output device index for the pulse (default: system default)")
+    p_rc.add_argument("--pulse-freq", type=float, default=1000.0, help="pulse frequency (Hz)")
+    p_rc.add_argument("--pulse-duration", type=float, default=0.3, help="pulse length (s)")
+    p_rc.add_argument("--pulse-delay", type=float, default=1.0,
+                      help="seconds after recording starts before the pulse plays")
+    p_rc.add_argument("--pulse-level", type=float, default=-6.0, help="pulse level (dBFS)")
+    p_rc.set_defaults(func=cmd_record_corpus)
 
     p_lb = sub.add_parser("loopback",
                           help="Route a live input device straight to an output device.")
